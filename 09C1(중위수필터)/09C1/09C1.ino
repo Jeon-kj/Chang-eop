@@ -14,9 +14,12 @@
 float timeout; // unit: us
 float dist_min, dist_max, dist_raw, dist_ema, alpha, dist_middle; // unit: mm
 
-float dist_list[N];
+float dist_list[N], dist_sorted_list[N];
 unsigned long last_sampling_time; // unit: ms
 float scale; // used for pulse duration to distance conversion
+
+int i = 0;
+int cnt = 0;
 
 void setup() {
 // initialize GPIO pins
@@ -40,28 +43,35 @@ void setup() {
   last_sampling_time = 0;
 }
 
-void fill_list(int i){
-  if(bool(dist_list[i])==false){
-    dist_list[i] = dist_raw;
+
+void change_list(int x){
+  if(x!=N-1){
+    dist_list[x] = dist_list[x+1];
   }
-  else if(i+1 < N){
-    fill_list(i+1);
+  else if(x==N-1){
+    dist_list[x] = dist_raw;
   }
-  else if(bool(dist_list[i])==true && i == N-1){
-    change_list(0);
+
+  if(x!=N-1){
+    change_list(x+1);
   }
 }
 
-void change_list(int i){
-  if(i!=N-1){
-    dist_list[i] = dist_list[i+1];
+void sorted_list(){
+  int i, j;
+  float a;
+  for(i=0;i<N;i++){
+    dist_sorted_list[i] = dist_list[i];
   }
-  else if(i==N-1){
-    dist_list[i] = dist_raw;
-  }
-
-  if(i!=N-1){
-    change_list(i+1);
+  
+  for(i=0;i<N;i++){
+    for(j=0;j<N;j++){
+      if(dist_sorted_list[i] > dist_sorted_list[j]){
+        a = dist_sorted_list[i];
+        dist_sorted_list[i] = dist_sorted_list[j];
+        dist_sorted_list[j] = a;
+      }
+    }
   }
 }
 
@@ -73,17 +83,26 @@ void loop() {
 // get a distance reading from the USS
   dist_raw = USS_measure(PIN_TRIG,PIN_ECHO);
 
-  fill_list(0);
+  if(i<N && cnt < N){
+    dist_list[i] = dist_raw;
+    i += 1;
+    cnt += 1;
+  }
+  else{
+    change_list(0);
+  }
+
+  sorted_list();
 
   int j;
   dist_middle = 0;
   if(N%2==0){
-    dist_middle = dist_list[N/2];
-    dist_middle += dist_list[N/2+1];
+    dist_middle = dist_sorted_list[N/2];
+    dist_middle += dist_sorted_list[N/2-1];
     dist_middle = dist_middle/2;
   }
   else{
-    dist_middle = dist_list[N/2+1];
+    dist_middle = dist_sorted_list[N/2];
   }
   
 // output the read value to the serial port
