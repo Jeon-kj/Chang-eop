@@ -183,7 +183,6 @@ float ir_distance_filter() {
 
   for(i=0;i<FN;i++){
     dist_list[i] = 100 + 300.0 / (b - a) * (ir_distance() - a);
-    sum+=dist_list[i];
   }
   float change;
   for(int idx=0;idx<FN;idx++){
@@ -196,13 +195,17 @@ float ir_distance_filter() {
     }
   }
   //컷팅
-  for (int idx = 0; idx < 10; idx++) {
-    sum -= dist_list[idx];
+  for (int idx = 0; idx < FN; idx++) {
+    if(idx<10){
+      
+    }
+    else if(idx>FN-10){
+      
+    }
+    else{
+      sum += dist_list[idx];
+    }
   }
-  for (int idx = 1; idx <= 10; idx++) {
-    sum -= dist_list[FN-idx];
-  }
-
   dist_filtering = sum/(FN-20);
   sum=0;
   i=0;
