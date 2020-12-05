@@ -27,13 +27,13 @@
 #define _SERVO_SPEED 30      // servo 속도 설정
 
 // Event periods
-#define _INTERVAL_DIST 30
-#define _INTERVAL_SERVO 30
+#define _INTERVAL_DIST 50
+#define _INTERVAL_SERVO 50
 #define _INTERVAL_SERIAL 100
 
 // PID parameters
-#define _KP 2.0
-#define _KD 19.5
+#define _KP 1.0
+#define _KD 20.0
 
 // Servo instance
 Servo myservo; 
@@ -119,14 +119,14 @@ void loop() {
   // PID control logic
     error_curr = dist_target - dist_ema;
     if(error_curr<0){
-      KD = _KD+5;
-      KP = _KP+1;
+      KD = _KD+3;
+      KP = _KP+0.5;
     }
     else{
       KD = _KD;
       KP = _KP;
     }
-    pterm = _KP * error_curr;
+    pterm = KP * error_curr;
     dterm = KD * (error_curr - error_prev);
     control = pterm+dterm;
 
@@ -183,6 +183,7 @@ float ir_distance_filter() {
 
   for(i=0;i<FN;i++){
     dist_list[i] = 100 + 300.0 / (b - a) * (ir_distance() - a);
+    sum+=dist_list[i];
   }
   float change;
   for(int idx=0;idx<FN;idx++){
@@ -195,18 +196,15 @@ float ir_distance_filter() {
     }
   }
   //컷팅
-  for(int idx=0;idx<FN;idx++){
-    if(idx<FN/3||idx>FN/3*2){
-    }
-    else{
-      sum += dist_list[idx];
-      cnt ++;
-    }
+  for (int idx = 0; idx < 10; idx++) {
+    sum -= dist_list[idx];
   }
-  
-  dist_filtering = sum/cnt;
+  for (int idx = 1; idx <= 10; idx++) {
+    sum -= dist_list[FN-idx];
+  }
+
+  dist_filtering = sum/(FN-20);
   sum=0;
-  cnt=0;
   i=0;
   dist_ema = alpha*dist_filtering + (1-alpha)*dist_ema;
 }
